@@ -5,12 +5,13 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider   = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -20,16 +21,65 @@ model User {
   name      String
   createdAt DateTime @default(now())
 
-  sueldos     Sueldo[]
-  gastos      Gasto[]
-  movimientos Movimiento[]
+  // relaciones de notas, sueldos y gastos
+  sueldos Sueldo[]
+  gastos  Gasto[]
+  notes   Note[]
+
+  // movimientos Movimiento[] (TO DO)
 }
 
 model Sueldo {
   id    String   @id @default(uuid())
   monto Float
+  tipo  String   @default("SUELDO")
   fecha DateTime @default(now())
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
+  notes  Note[]
+}
+
+model Gasto {
+  id               String   @id @default(uuid())
+  descripcion      String
+  monto            Float
+  fecha            DateTime @default(now())
+  categoria        String? // ML: categoría inferida
+  esExtraordinario Boolean  @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  noteId Int?   @unique
+  note   Note?  @relation(fields: [noteId], references: [id])
+}
+
+model AnalyticsSnapshot {
+  id           String   @id @default(uuid())
+  userId       String
+  mes          Int
+  anio         Int
+  burnRate     Float    @default(0)
+  totalGastos  Float    @default(0)
+  totalSueldos Float    @default(0)
+  ahorroProy   Float    @default(0)
+  diasElapsed  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, mes, anio])
+}
+
+model Note {
+  id          Int    @id @default(autoincrement())
+  title       String
+  description String
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  sueldoId String?
+  sueldo   Sueldo? @relation(fields: [sueldoId], references: [id])
+
+  gasto Gasto? // telación inversa ( sin "fields" ni "references")
 }

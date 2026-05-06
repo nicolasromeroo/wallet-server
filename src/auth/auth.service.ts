@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
@@ -75,5 +76,49 @@ export class AuthService {
       user: userWithoutPassword,
       ...tokens,
     };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const updated = await this.prismaService.user.update({
+      where: { id: userId },
+      data: { ...(dto.name && { name: dto.name }) },
+    });
+    const { password: _, ...safe } = updated;
+    return safe;
+  }
+
+  async profile(userId: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+    const { password: _, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  async resetData(userId: string) {
+    return this.prismaService.$transaction(async (tx) => {
+      // Desconectar notas de gastos antes de eliminar (FK: Gasto.noteId → Note)
+      await tx.gasto.updateMany({ where: { userId }, data: { noteId: null } });
+      await tx.note.deleteMany({ where: { userId } });
+      await tx.gasto.deleteMany({ where: { userId } });
+      await tx.sueldo.deleteMany({ where: { userId } });
+      await tx.analyticsSnapshot.deleteMany({ where: { userId } });
+      return { message: 'Datos eliminados correctamente' };
+    });
+  }
+
+  async deleteAccount(userId: string) {
+    return this.prismaService.$transaction(async (tx) => {
+      await tx.gasto.updateMany({ where: { userId }, data: { noteId: null } });
+      await tx.note.deleteMany({ where: { userId } });
+      await tx.gasto.deleteMany({ where: { userId } });
+      await tx.sueldo.deleteMany({ where: { userId } });
+      await tx.analyticsSnapshot.deleteMany({ where: { userId } });
+      await tx.user.delete({ where: { id: userId } });
+      return { message: 'Cuenta eliminada correctamente' };
+    });
   }
 }

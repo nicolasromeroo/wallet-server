@@ -1,0 +1,86 @@
+import {
+  Controller,
+  Post,
+  Put,
+  Get,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import { GastosService } from './gastos.service';
+import { JwtGuard } from '../auth/guards/jwt.guard';
+
+@Controller('gastos')
+@UseGuards(JwtGuard)
+export class GastosController {
+  constructor(private readonly gastosService: GastosService) {}
+
+  @Get()
+  listar(@Req() req: any) {
+    return this.gastosService.listar(req.user.id);
+  }
+
+  @Get('saldo')
+  getSaldo(@Req() req: any) {
+    return this.gastosService.getSaldo(req.user.id);
+  }
+
+  @Post()
+  crearGasto(
+    @Req() req: any,
+    @Body('monto') monto: number,
+    @Body('descripcion') descripcion: string,
+    @Body('esExtraordinario') esExtraordinario?: boolean,
+  ) {
+    return this.gastosService.crearGasto(
+      req.user.id,
+      monto,
+      descripcion,
+      esExtraordinario ?? false,
+    );
+  }
+
+  @Put('update/:id')
+  actualizarGasto(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body('monto') monto?: number,
+    @Body('descripcion') descripcion?: string,
+    @Body('esExtraordinario') esExtraordinario?: boolean,
+  ) {
+    return this.gastosService.actualizarGasto(
+      id,
+      req.user.id,
+      monto,
+      descripcion,
+      esExtraordinario,
+    );
+  }
+
+  @Delete('delete/:id')
+  eliminarGasto(@Req() req: any, @Param('id') id: string) {
+    return this.gastosService.eliminarGasto(id, req.user.id);
+  }
+
+  // GET /gastos/por-mes?mes=5&anio=2026
+  @Get('por-mes')
+  getGastosPorMes(
+    @Req() req: any,
+    @Query('mes') mes: string,
+    @Query('anio') anio: string,
+  ) {
+    return this.gastosService.getGastosPorMes(
+      req.user.id,
+      parseInt(mes, 10),
+      parseInt(anio, 10),
+    );
+  }
+
+  @Get('excesivo')
+  getGastoExcesivo(@Req() req: any, @Query('monto') monto: string) {
+    return this.gastosService.getGastoExcesivo(req.user.id, parseFloat(monto));
+  }
+}

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Sueldo" ADD COLUMN "tipo" TEXT NOT NULL DEFAULT 'SUELDO';
