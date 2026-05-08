@@ -20,14 +20,17 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
       totalGastosMes,
       totalSueldosHistorico,
       totalGastosHistorico,
+      totalGastosTodosHistorico,
     ] = await Promise.all([
       this.sueldoRepository.getSumByMonth(query.userId, mes, anio),
       this.gastoRepository.getSumRegularByUserAndMonth(query.userId, mes, anio),
       this.sueldoRepository.getSumAll(query.userId),
       this.gastoRepository.getSumRegularByUser(query.userId),
+      this.gastoRepository.getSumByUser(query.userId),
     ]);
 
-    const saldo = totalSueldosHistorico - totalGastosHistorico;
+    // El saldo descuenta TODOS los gastos (ordinarios + extraordinarios/fijos)
+    const saldo = totalSueldosHistorico - totalGastosTodosHistorico;
     const porcentaje =
       totalSueldosMes > 0
         ? Math.round((totalGastosMes / totalSueldosMes) * 1000) / 10
@@ -36,7 +39,8 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
     console.log('[DEBUG GetSaldo]', {
       userId: query.userId,
       totalSueldosHistorico,
-      totalGastosHistorico,
+      totalGastosRegularHistorico: totalGastosHistorico,
+      totalGastosTodosHistorico,
       totalSueldosMes,
       totalGastosMes,
       saldo,

@@ -19,7 +19,6 @@ export class CreateGastoHandler implements ICommandHandler<CreateGastoCommand> {
   async execute(command: CreateGastoCommand) {
     const { userId, monto, descripcion, esExtraordinario } = command;
 
-    // Validación de negocio: sueldo registrado
     const sueldo = await this.sueldoRepository.findActual(userId);
     if (!sueldo) {
       throw new BadRequestException(
@@ -27,7 +26,9 @@ export class CreateGastoHandler implements ICommandHandler<CreateGastoCommand> {
       );
     }
 
-    // Gastos extraordinarios (ej: alquiler) saltan la validación de saldo
+    // gastos 'extraordinarios' (ej: alquiler) saltan la validación de saldo.
+    // para desactivar esta funcion simplemente no envíes el campo esExtraordinario o envíalo como false.
+    // aclaracion: en la UI gasto 'extraordinario' es gasto 'fijo' (ej: alquiler, servicios).
     if (!esExtraordinario) {
       const [totalSueldos, totalGastos] = await Promise.all([
         this.sueldoRepository.getSumAll(userId),
