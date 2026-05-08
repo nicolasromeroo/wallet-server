@@ -35,13 +35,9 @@ export class GastoService {
 
   // calcular saldo
   async getSaldo(userId: string) {
-    // const ingresos = await this.prismaService.sueldo.aggregate({
-    //   where: { userId },
-    //   _sum: { monto: true },
-    // });
-    const ultimoSueldo = await this.prismaService.sueldo.findFirst({
+    const ingresos = await this.prismaService.sueldo.aggregate({
       where: { userId },
-      orderBy: { fecha: 'desc' },
+      _sum: { monto: true },
     });
 
     const gastos = await this.prismaService.gasto.aggregate({
@@ -49,7 +45,7 @@ export class GastoService {
       _sum: { monto: true },
     });
 
-    return (ultimoSueldo?.monto || 0) - (gastos._sum.monto || 0);
+    return (ingresos._sum.monto || 0) - (gastos._sum.monto || 0);
   }
 
   async findAll() {

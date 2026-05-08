@@ -85,6 +85,33 @@ export class GastoRepository implements IGastoRepository {
     return this.prisma.gasto.delete({ where: { id } });
   }
 
+  async getSumRegularByUser(userId: string): Promise<number> {
+    const result = await this.prisma.gasto.aggregate({
+      where: { userId, esExtraordinario: false },
+      _sum: { monto: true },
+    });
+    return result._sum.monto ?? 0;
+  }
+
+  async getSumRegularByUserAndMonth(
+    userId: string,
+    mes: number,
+    anio: number,
+  ): Promise<number> {
+    const result = await this.prisma.gasto.aggregate({
+      where: {
+        userId,
+        esExtraordinario: false,
+        fecha: {
+          gte: new Date(anio, mes - 1, 1),
+          lt: new Date(anio, mes, 1),
+        },
+      },
+      _sum: { monto: true },
+    });
+    return result._sum.monto ?? 0;
+  }
+
   async checkGastoExcesivo(userId: string, monto: number): Promise<boolean> {
     const totalGastos = await this.getSumByUser(userId);
     return totalGastos + monto > 35000; // Ejemplo: si el total de gastos supera los 35000, consideramos que es excesivo

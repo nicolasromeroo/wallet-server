@@ -31,6 +31,13 @@ export interface IGastoRepository {
     mes: number,
     anio: number,
   ): Promise<number>;
+  /** Solo gastos regulares (esExtraordinario = false) */
+  getSumRegularByUser(userId: string): Promise<number>;
+  getSumRegularByUserAndMonth(
+    userId: string,
+    mes: number,
+    anio: number,
+  ): Promise<number>;
   delete(id: string): Promise<Gasto>;
   checkGastoExcesivo(userId: string, monto: number): Promise<boolean>;
 }

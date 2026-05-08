@@ -22,9 +22,9 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
       totalGastosHistorico,
     ] = await Promise.all([
       this.sueldoRepository.getSumByMonth(query.userId, mes, anio),
-      this.gastoRepository.getSumByUserAndMonth(query.userId, mes, anio),
+      this.gastoRepository.getSumRegularByUserAndMonth(query.userId, mes, anio),
       this.sueldoRepository.getSumAll(query.userId),
-      this.gastoRepository.getSumByUser(query.userId),
+      this.gastoRepository.getSumRegularByUser(query.userId),
     ]);
 
     const saldo = totalSueldosHistorico - totalGastosHistorico;
@@ -33,12 +33,22 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
         ? Math.round((totalGastosMes / totalSueldosMes) * 1000) / 10
         : 0;
 
+    console.log('[DEBUG GetSaldo]', {
+      userId: query.userId,
+      totalSueldosHistorico,
+      totalGastosHistorico,
+      totalSueldosMes,
+      totalGastosMes,
+      saldo,
+    });
+
     return {
       saldo,
       sueldo: totalSueldosMes,
       totalGastos: totalGastosMes,
       porcentaje,
       alerta: porcentaje >= 80,
+      _debug: { totalSueldosHistorico, totalGastosHistorico },
     };
   }
 }

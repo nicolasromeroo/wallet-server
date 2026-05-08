@@ -18,10 +18,9 @@ export class SueldosService {
 
   // obtener porcentaje del sueldo usado en gastos
   async getPorcentajeSueldoUsado(userId: string) {
-    const ultimoSueldo = await this.prismaService.sueldo.findFirst({
-      // se obtiene el último sueldo ingresado
+    const ingresos = await this.prismaService.sueldo.aggregate({
       where: { userId },
-      orderBy: { fecha: 'desc' },
+      _sum: { monto: true },
     });
 
     const gastos = await this.prismaService.gasto.aggregate({
@@ -30,12 +29,12 @@ export class SueldosService {
       _sum: { monto: true },
     });
 
-    if (!ultimoSueldo || ultimoSueldo.monto === 0) {
+    if (!ingresos._sum.monto || ingresos._sum.monto === 0) {
       return 0;
     }
 
     const porcentajeUsado =
-      ((gastos._sum.monto || 0) / ultimoSueldo.monto) * 100;
+      ((gastos._sum.monto || 0) / ingresos._sum.monto) * 100;
     return porcentajeUsado;
   }
 

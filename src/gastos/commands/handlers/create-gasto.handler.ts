@@ -31,14 +31,22 @@ export class CreateGastoHandler implements ICommandHandler<CreateGastoCommand> {
     if (!esExtraordinario) {
       const [totalSueldos, totalGastos] = await Promise.all([
         this.sueldoRepository.getSumAll(userId),
-        this.gastoRepository.getSumByUser(userId),
+        this.gastoRepository.getSumRegularByUser(userId),
       ]);
 
       const saldo = totalSueldos - totalGastos;
 
+      console.log('[DEBUG CREATE-GASTO]', {
+        userId,
+        monto,
+        totalSueldos,
+        totalGastos,
+        saldo,
+      });
+
       if (monto > saldo) {
         throw new BadRequestException(
-          `Saldo insuficiente. Tu saldo disponible es $${saldo.toFixed(2)} y estás intentando gastar $${monto.toFixed(2)}.`,
+          `Saldo insuficiente. Sueldos: $${totalSueldos} | Gastos regulares: $${totalGastos} | Saldo: $${saldo.toFixed(2)} | Intentás gastar: $${monto.toFixed(2)}.`,
         );
       }
     }

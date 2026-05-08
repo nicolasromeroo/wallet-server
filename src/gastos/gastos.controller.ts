@@ -12,11 +12,17 @@ import {
 } from '@nestjs/common';
 import { GastosService } from './gastos.service';
 import { JwtGuard } from '../auth/guards/jwt.guard';
+import { GastoRepository } from './repositories/gasto.repository';
+import { SueldoRepository } from '../sueldos/repositories/sueldo.repository';
 
 @Controller('gastos')
 @UseGuards(JwtGuard)
 export class GastosController {
-  constructor(private readonly gastosService: GastosService) {}
+  constructor(
+    private readonly gastosService: GastosService,
+    private readonly gastoRepository: GastoRepository,
+    private readonly sueldoRepository: SueldoRepository,
+  ) {}
 
   @Get()
   listar(@Req() req: any) {
@@ -82,5 +88,35 @@ export class GastosController {
   @Get('excesivo')
   getGastoExcesivo(@Req() req: any, @Query('monto') monto: string) {
     return this.gastosService.getGastoExcesivo(req.user.id, parseFloat(monto));
+  }
+
+  // Endpoint temporal de diagnóstico - muestra los valores exactos de la BD
+  @Get('debug-saldo')
+  async debugSaldo(@Req() req: any) {
+    const userId = req.user.id;
+    const [sueldos, gastos, totalSueldos, totalGastos, totalGastosRegular] =
+      await Promise.all([
+        this.sueldoRepository.findAll(userId),
+        this.gastoRepository.findByUser(userId),
+        this.sueldoRepository.getSumAll(userId),
+        this.gastoRepository.getSumByUser(userId),
+        this.gastoRepository.getSumRegularByUser(userId),
+      ]);
+    return {
+      sueldos,
+      gastos: gastos.map((g) => ({
+        id: g.id,
+        monto: g.monto,
+        descripcion: g.descripcion,
+        esExtraordinario: g.esExtraordinario,
+      })),
+      resumen: {
+        totalSueldos,
+        totalGastos,
+        totalGastosRegular,
+        saldoConTodos: totalSueldos - totalGastos,
+        saldoSoloRegulares: totalSueldos - totalGastosRegular,
+      },
+    };
   }
 }
