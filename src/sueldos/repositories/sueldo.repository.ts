@@ -41,4 +41,12 @@ export class SueldoRepository {
     });
     return result._sum.monto ?? 0;
   }
+
+  async getSumAll(userId: string): Promise<number> {
+    const result = await this.prisma.sueldo.aggregate({
+      where: { userId },
+      _sum: { monto: true },
+    });
+    return result._sum.monto ?? 0;
+  }
 }

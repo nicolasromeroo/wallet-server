@@ -15,21 +15,28 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
     const mes = now.getMonth() + 1;
     const anio = now.getFullYear();
 
-    const [totalSueldos, totalGastos] = await Promise.all([
+    const [
+      totalSueldosMes,
+      totalGastosMes,
+      totalSueldosHistorico,
+      totalGastosHistorico,
+    ] = await Promise.all([
       this.sueldoRepository.getSumByMonth(query.userId, mes, anio),
       this.gastoRepository.getSumByUserAndMonth(query.userId, mes, anio),
+      this.sueldoRepository.getSumAll(query.userId),
+      this.gastoRepository.getSumByUser(query.userId),
     ]);
 
-    const saldo = totalSueldos - totalGastos;
+    const saldo = totalSueldosHistorico - totalGastosHistorico;
     const porcentaje =
-      totalSueldos > 0
-        ? Math.round((totalGastos / totalSueldos) * 1000) / 10
+      totalSueldosMes > 0
+        ? Math.round((totalGastosMes / totalSueldosMes) * 1000) / 10
         : 0;
 
     return {
       saldo,
-      sueldo: totalSueldos,
-      totalGastos,
+      sueldo: totalSueldosMes,
+      totalGastos: totalGastosMes,
       porcentaje,
       alerta: porcentaje >= 80,
     };

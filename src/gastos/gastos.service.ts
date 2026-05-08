@@ -6,7 +6,7 @@ import { DeleteGastoCommand } from './commands/delete-gasto.command';
 import { GetGastosPorMesQuery } from './queries/get-gastos-por-mes.query';
 import { GetGastosQuery } from './queries/get-gastos.query';
 import { GetSaldoQuery } from './queries/get-saldo.query';
-import { CheckGastoExcesivoCommand } from './commands/check-gasto-excesivo.command';
+import { GetGastoExcesivoQuery } from './queries/get-gasto-excesivo.query';
 
 // Con CQRS, el Service ya no tiene lógica de negocio
 // Solo actúa como dispatcher: recibe la intención y la despacha al bus correspondiente
@@ -63,8 +63,6 @@ export class GastosService {
   }
 
   getGastoExcesivo(userId: string, monto: number) {
-    return this.commandBus.execute(
-      new CheckGastoExcesivoCommand(userId, monto),
-    );
+    return this.queryBus.execute(new GetGastoExcesivoQuery(userId, monto));
   }
 }

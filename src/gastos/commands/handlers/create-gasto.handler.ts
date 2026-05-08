@@ -29,8 +29,13 @@ export class CreateGastoHandler implements ICommandHandler<CreateGastoCommand> {
 
     // Gastos extraordinarios (ej: alquiler) saltan la validación de saldo
     if (!esExtraordinario) {
-      const totalGastos = await this.gastoRepository.getSumByUser(userId);
-      const saldo = sueldo.monto - totalGastos;
+      const [totalSueldos, totalGastos] = await Promise.all([
+        this.sueldoRepository.getSumAll(userId),
+        this.gastoRepository.getSumByUser(userId),
+      ]);
+
+      const saldo = totalSueldos - totalGastos;
+
       if (monto > saldo) {
         throw new BadRequestException(
           `Saldo insuficiente. Tu saldo disponible es $${saldo.toFixed(2)} y estás intentando gastar $${monto.toFixed(2)}.`,
