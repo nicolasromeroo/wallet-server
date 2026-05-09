@@ -41,6 +41,16 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
       sueldoDelMes > 0
         ? Math.round((totalGastosMes / sueldoDelMes) * 1000) / 10
         : 0;
+    // Porcentaje histórico: cuánto del total de ingresos se consumió (mismo cálculo que saldo)
+    const porcentajeHistorico =
+      totalSueldosHistorico > 0
+        ? Math.min(
+            Math.round(
+              (totalGastosTodosHistorico / totalSueldosHistorico) * 1000,
+            ) / 10,
+            100,
+          )
+        : 0;
 
     console.log('[DEBUG GetSaldo]', {
       userId: query.userId,
@@ -57,7 +67,9 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
       saldo,
       sueldo: sueldoDelMes,
       totalGastos: totalGastosMes,
+      totalIngresos: totalSueldosHistorico,
       porcentaje,
+      porcentajeHistorico,
       alerta: porcentaje >= 80,
       _debug: { totalSueldosHistorico, totalGastosHistorico },
     };
