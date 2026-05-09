@@ -29,11 +29,17 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
       this.gastoRepository.getSumByUser(query.userId),
     ]);
 
+    // Si no hay sueldo registrado este mes, usar el más reciente como referencia
+    const sueldoDelMes =
+      totalSueldosMes > 0
+        ? totalSueldosMes
+        : ((await this.sueldoRepository.findActual(query.userId))?.monto ?? 0);
+
     // El saldo descuenta TODOS los gastos (ordinarios + extraordinarios/fijos)
     const saldo = totalSueldosHistorico - totalGastosTodosHistorico;
     const porcentaje =
-      totalSueldosMes > 0
-        ? Math.round((totalGastosMes / totalSueldosMes) * 1000) / 10
+      sueldoDelMes > 0
+        ? Math.round((totalGastosMes / sueldoDelMes) * 1000) / 10
         : 0;
 
     console.log('[DEBUG GetSaldo]', {
@@ -42,13 +48,14 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
       totalGastosRegularHistorico: totalGastosHistorico,
       totalGastosTodosHistorico,
       totalSueldosMes,
+      sueldoDelMes,
       totalGastosMes,
       saldo,
     });
 
     return {
       saldo,
-      sueldo: totalSueldosMes,
+      sueldo: sueldoDelMes,
       totalGastos: totalGastosMes,
       porcentaje,
       alerta: porcentaje >= 80,

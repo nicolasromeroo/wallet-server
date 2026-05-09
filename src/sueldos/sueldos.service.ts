@@ -95,6 +95,7 @@ export class SueldosService {
   async getSueldosByUserId(userId: string) {
     return this.prismaService.sueldo.findMany({
       where: { userId },
+      orderBy: { fecha: 'desc' },
     });
   }
 
