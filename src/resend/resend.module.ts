@@ -7,7 +7,7 @@ import { ResendController } from './resend.controller';
   imports: [
     ResendLibModule.forRootAsync({
       useFactory: async () => ({
-        apiKey: process.env.RESEND_API_KEY,
+        apiKey: process.env.RESEND_API_KEY || 'dummy-key-for-production',
       }),
     }),
   ],
