@@ -11,7 +11,7 @@
     "start": "nest start",
     "start:dev": "set NODE_ENV=development && nest start --watch",
     "start:debug": "set NODE_ENV=development && nest start --debug --watch",
-    "start:prod": "set NODE_ENV=production && npm run switch:prod && npx prisma migrate deploy && node dist/main.js",
+    "start:prod": "export NODE_ENV=production && bash scripts/switch-db.sh production && npx prisma generate && npx prisma db push --accept-data-loss=false && node dist/main.js",
     "switch:dev": "powershell -ExecutionPolicy Bypass -File scripts/switch-db.ps1 -Environment development",
     "switch:prod": "powershell -ExecutionPolicy Bypass -File scripts/switch-db.ps1 -Environment production",
     "prisma:generate": "prisma generate",
