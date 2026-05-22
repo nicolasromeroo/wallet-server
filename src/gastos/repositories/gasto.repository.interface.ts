@@ -13,7 +13,7 @@ export type UpdateGastoInput = {
   monto?: number;
   descripcion?: string;
   esExtraordinario?: boolean;
-  categoria?: string;
+  categoria?: string | null; // null = limpiar; undefined = no tocar
 };
 
 // Interfaz del contrato: si mañana cambiamos de ORM, solo tocamos la implementación
