@@ -204,26 +204,34 @@ export class AnalyticsService {
       });
 
       // Persistir snapshot para historial y ML features futuras
-      await this.prisma.analyticsSnapshot.upsert({
-        where: { userId_mes_anio: { userId, mes, anio } },
-        create: {
-          userId,
-          mes,
-          anio,
-          burnRate: burnRate.burnRate,
-          totalGastos: burnRate.totalGastos,
-          totalSueldos: savings.income,
-          ahorroProy: savings.projectedSavings,
-          diasElapsed: burnRate.diasElapsed,
-        },
-        update: {
-          burnRate: burnRate.burnRate,
-          totalGastos: burnRate.totalGastos,
-          totalSueldos: savings.income,
-          ahorroProy: savings.projectedSavings,
-          diasElapsed: burnRate.diasElapsed,
-        },
-      });
+      // Wrapped en try-catch propio para que un fallo de persistencia no rompa la respuesta
+      try {
+        await this.prisma.analyticsSnapshot.upsert({
+          where: { userId_mes_anio: { userId, mes, anio } },
+          create: {
+            userId,
+            mes,
+            anio,
+            burnRate: burnRate.burnRate,
+            totalGastos: burnRate.totalGastos,
+            totalSueldos: savings.income,
+            ahorroProy: savings.projectedSavings,
+            diasElapsed: burnRate.diasElapsed,
+          },
+          update: {
+            burnRate: burnRate.burnRate,
+            totalGastos: burnRate.totalGastos,
+            totalSueldos: savings.income,
+            ahorroProy: savings.projectedSavings,
+            diasElapsed: burnRate.diasElapsed,
+          },
+        });
+      } catch (upsertError) {
+        console.warn(
+          '[ANALYTICS] No se pudo persistir snapshot (¿tabla no migrada en prod?).',
+          upsertError,
+        );
+      }
 
       return {
         userId,
