@@ -14,7 +14,7 @@ async function bootstrap() {
     }),
   );
 
-  // CORS — permitir Vercel + localhost
+  // CORS — permitir Vercel + localhost (robusta)
   const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:5173',
@@ -22,10 +22,25 @@ async function bootstrap() {
   ];
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Permitir localhost sin origin header (requests desde herramientas)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS blocked'));
+      }
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+    ],
+    maxAge: 86400,
+    exposedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200,
   });
 
   await app.listen(process.env.PORT || 3000);
