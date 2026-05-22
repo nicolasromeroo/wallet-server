@@ -89,13 +89,12 @@ export class AnalyticsService {
       0,
     ).getDate();
 
-    const [ultimoSueldo, burnRate] = await Promise.all([
-      this.prisma.sueldo.findFirst({
-        where: { userId },
-        orderBy: { fecha: 'desc' },
-      }),
-      this.getBurnRate(userId),
-    ]);
+    // Queries secuenciales para no agotar pool de conexiones
+    const ultimoSueldo = await this.prisma.sueldo.findFirst({
+      where: { userId },
+      orderBy: { fecha: 'desc' },
+    });
+    const burnRate = await this.getBurnRate(userId);
 
     const income = ultimoSueldo?.monto ?? 0;
     const projectedExpenses = burnRate.burnRate * diasEnMes;
@@ -157,10 +156,9 @@ export class AnalyticsService {
     const prevMes = currentMes === 1 ? 12 : currentMes - 1;
     const prevAnio = currentMes === 1 ? currentAnio - 1 : currentAnio;
 
-    const [currentBurn, lastBurn] = await Promise.all([
-      this.getBurnRate(userId, currentMes, currentAnio),
-      this.getBurnRate(userId, prevMes, prevAnio),
-    ]);
+    // Queries secuenciales para no agotar pool de conexiones
+    const currentBurn = await this.getBurnRate(userId, currentMes, currentAnio);
+    const lastBurn = await this.getBurnRate(userId, prevMes, prevAnio);
 
     const currentMonthProjected = currentBurn.burnRateProyectado;
     const lastMonthTotal = lastBurn.totalGastos;
@@ -188,12 +186,11 @@ export class AnalyticsService {
     const mes = now.getMonth() + 1;
     const anio = now.getFullYear();
 
-    const [burnRate, savings, categories, comparison] = await Promise.all([
-      this.getBurnRate(userId),
-      this.getProjectedSavings(userId),
-      this.getCategoryBreakdown(userId),
-      this.getMonthlyComparison(userId),
-    ]);
+    // Ejecutar secuencialmente para no agotar pool de conexiones en producción
+    const burnRate = await this.getBurnRate(userId);
+    const savings = await this.getProjectedSavings(userId);
+    const categories = await this.getCategoryBreakdown(userId);
+    const comparison = await this.getMonthlyComparison(userId);
 
     // Persistir snapshot para historial y ML features futuras
     await this.prisma.analyticsSnapshot.upsert({

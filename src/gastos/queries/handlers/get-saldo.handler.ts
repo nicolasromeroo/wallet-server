@@ -16,11 +16,26 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
     const anio = now.getFullYear();
 
     // Ejecutar queries secuenciales en lugar de paralelo para no agotar pool de conexiones
-    const totalSueldosMes = await this.sueldoRepository.getSumByMonth(query.userId, mes, anio);
-    const totalGastosMes = await this.gastoRepository.getSumRegularByUserAndMonth(query.userId, mes, anio);
-    const totalSueldosHistorico = await this.sueldoRepository.getSumAll(query.userId);
-    const totalGastosHistorico = await this.gastoRepository.getSumRegularByUser(query.userId);
-    const totalGastosTodosHistorico = await this.gastoRepository.getSumByUser(query.userId);
+    const totalSueldosMes = await this.sueldoRepository.getSumByMonth(
+      query.userId,
+      mes,
+      anio,
+    );
+    const totalGastosMes =
+      await this.gastoRepository.getSumRegularByUserAndMonth(
+        query.userId,
+        mes,
+        anio,
+      );
+    const totalSueldosHistorico = await this.sueldoRepository.getSumAll(
+      query.userId,
+    );
+    const totalGastosHistorico = await this.gastoRepository.getSumRegularByUser(
+      query.userId,
+    );
+    const totalGastosTodosHistorico = await this.gastoRepository.getSumByUser(
+      query.userId,
+    );
 
     // Si no hay sueldo registrado este mes, usar el más reciente como referencia
     const sueldoDelMes =

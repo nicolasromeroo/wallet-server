@@ -32,7 +32,8 @@ export class CreateGastoHandler implements ICommandHandler<CreateGastoCommand> {
     if (!esExtraordinario) {
       // Queries secuenciales para no agotar el pool de conexiones
       const totalSueldos = await this.sueldoRepository.getSumAll(userId);
-      const totalGastos = await this.gastoRepository.getSumRegularByUser(userId);
+      const totalGastos =
+        await this.gastoRepository.getSumRegularByUser(userId);
 
       const saldo = totalSueldos - totalGastos;
 
