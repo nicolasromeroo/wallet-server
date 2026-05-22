@@ -5,6 +5,8 @@
 
 # variables de entorno
 .env
+.env.*
+!.env.example
 
 # Logs
 logs

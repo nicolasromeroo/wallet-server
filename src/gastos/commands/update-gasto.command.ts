@@ -5,5 +5,6 @@ export class UpdateGastoCommand {
     public readonly monto?: number,
     public readonly descripcion?: string,
     public readonly esExtraordinario?: boolean,
+    public readonly categoria?: string,
   ) {}
 }

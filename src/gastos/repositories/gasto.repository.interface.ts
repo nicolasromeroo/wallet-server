@@ -6,12 +6,14 @@ export type CreateGastoInput = {
   monto: number;
   descripcion: string;
   esExtraordinario?: boolean;
+  categoria?: string;
 };
 
 export type UpdateGastoInput = {
   monto?: number;
   descripcion?: string;
   esExtraordinario?: boolean;
+  categoria?: string;
 };
 
 // Interfaz del contrato: si mañana cambiamos de ORM, solo tocamos la implementación

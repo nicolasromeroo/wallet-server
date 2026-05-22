@@ -100,8 +100,6 @@ export class AuthService {
 
   async resetData(userId: string) {
     return this.prismaService.$transaction(async (tx) => {
-      // Desconectar notas de gastos antes de eliminar (FK: Gasto.noteId → Note)
-      await tx.gasto.updateMany({ where: { userId }, data: { noteId: null } });
       await tx.note.deleteMany({ where: { userId } });
       await tx.gasto.deleteMany({ where: { userId } });
       await tx.sueldo.deleteMany({ where: { userId } });
@@ -112,7 +110,6 @@ export class AuthService {
 
   async deleteAccount(userId: string) {
     return this.prismaService.$transaction(async (tx) => {
-      await tx.gasto.updateMany({ where: { userId }, data: { noteId: null } });
       await tx.note.deleteMany({ where: { userId } });
       await tx.gasto.deleteMany({ where: { userId } });
       await tx.sueldo.deleteMany({ where: { userId } });

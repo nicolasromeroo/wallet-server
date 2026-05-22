@@ -17,7 +17,7 @@ export class CreateGastoHandler implements ICommandHandler<CreateGastoCommand> {
   ) {}
 
   async execute(command: CreateGastoCommand) {
-    const { userId, monto, descripcion, esExtraordinario } = command;
+    const { userId, monto, descripcion, esExtraordinario, categoria } = command;
 
     const sueldo = await this.sueldoRepository.findActual(userId);
     if (!sueldo) {
@@ -57,6 +57,7 @@ export class CreateGastoHandler implements ICommandHandler<CreateGastoCommand> {
       monto,
       descripcion,
       esExtraordinario: esExtraordinario ?? false,
+      categoria: categoria || undefined,
     });
 
     this.eventEmitter.emit(

@@ -30,9 +30,16 @@ export class GastosService {
     monto: number,
     descripcion: string,
     esExtraordinario = false,
+    categoria?: string,
   ) {
     return this.commandBus.execute(
-      new CreateGastoCommand(userId, monto, descripcion, esExtraordinario),
+      new CreateGastoCommand(
+        userId,
+        monto,
+        descripcion,
+        esExtraordinario,
+        categoria,
+      ),
     );
   }
 
@@ -42,6 +49,7 @@ export class GastosService {
     monto?: number,
     descripcion?: string,
     esExtraordinario?: boolean,
+    categoria?: string,
   ) {
     return this.commandBus.execute(
       new UpdateGastoCommand(
@@ -50,6 +58,7 @@ export class GastosService {
         monto,
         descripcion,
         esExtraordinario,
+        categoria,
       ),
     );
   }

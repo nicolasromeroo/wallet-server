@@ -14,9 +14,7 @@ export class NotesService {
         description: createNoteDto.description,
         userId,
         sueldoId: createNoteDto.sueldoId ?? null,
-        ...(createNoteDto.gastoId && {
-          gasto: { connect: { id: createNoteDto.gastoId } },
-        }),
+        gastoId: createNoteDto.gastoId ?? null,
       },
       include: { gasto: true, sueldo: true },
     });
@@ -30,43 +28,40 @@ export class NotesService {
     });
   }
 
-  async findOne(id: number, userId: string) {
+  async findOne(id: string, userId: string) {
     const note = await this.prismaService.note.findFirst({
-      where: { id, userId },
+      where: { id: parseInt(id), userId },
       include: { gasto: true, sueldo: true },
     });
     if (!note) throw new NotFoundException('Nota no encontrada');
     return note;
   }
 
-  async update(id: number, userId: string, updateNoteDto: UpdateNoteDto) {
+  async update(id: string, userId: string, updateNoteDto: UpdateNoteDto) {
     await this.findOne(id, userId);
 
-    const gastoUpdate =
-      updateNoteDto.gastoId === null
-        ? { gasto: { disconnect: true } }
-        : updateNoteDto.gastoId
-          ? { gasto: { connect: { id: updateNoteDto.gastoId } } }
-          : {};
-
     return await this.prismaService.note.update({
-      where: { id },
+      where: { id: parseInt(id) },
       data: {
         ...(updateNoteDto.title && { title: updateNoteDto.title }),
-        ...(updateNoteDto.description !== undefined && {
+        ...(updateNoteDto.description && {
           description: updateNoteDto.description,
         }),
         ...(updateNoteDto.sueldoId !== undefined && {
           sueldoId: updateNoteDto.sueldoId,
         }),
-        ...gastoUpdate,
+        ...(updateNoteDto.gastoId !== undefined && {
+          gastoId: updateNoteDto.gastoId,
+        }),
       },
       include: { gasto: true, sueldo: true },
     });
   }
 
-  async remove(id: number, userId: string) {
+  async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    return await this.prismaService.note.delete({ where: { id } });
+    return await this.prismaService.note.delete({
+      where: { id: parseInt(id) },
+    });
   }
 }

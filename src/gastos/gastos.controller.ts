@@ -14,6 +14,8 @@ import { GastosService } from './gastos.service';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { GastoRepository } from './repositories/gasto.repository';
 import { SueldoRepository } from '../sueldos/repositories/sueldo.repository';
+import { CreateGastoDto } from './dto/create-gasto.dto';
+import { UpdateGastoDto } from './dto/update-gasto.dto';
 
 @Controller('gastos')
 @UseGuards(JwtGuard)
@@ -35,17 +37,13 @@ export class GastosController {
   }
 
   @Post()
-  crearGasto(
-    @Req() req: any,
-    @Body('monto') monto: number,
-    @Body('descripcion') descripcion: string,
-    @Body('esExtraordinario') esExtraordinario?: boolean,
-  ) {
+  crearGasto(@Req() req: any, @Body() dto: CreateGastoDto) {
     return this.gastosService.crearGasto(
       req.user.id,
-      monto,
-      descripcion,
-      esExtraordinario ?? false,
+      dto.monto,
+      dto.descripcion,
+      dto.esExtraordinario ?? false,
+      dto.categoria,
     );
   }
 
@@ -53,16 +51,15 @@ export class GastosController {
   actualizarGasto(
     @Req() req: any,
     @Param('id') id: string,
-    @Body('monto') monto?: number,
-    @Body('descripcion') descripcion?: string,
-    @Body('esExtraordinario') esExtraordinario?: boolean,
+    @Body() dto: UpdateGastoDto,
   ) {
     return this.gastosService.actualizarGasto(
       id,
       req.user.id,
-      monto,
-      descripcion,
-      esExtraordinario,
+      dto.monto,
+      dto.descripcion,
+      dto.esExtraordinario,
+      dto.categoria,
     );
   }
 

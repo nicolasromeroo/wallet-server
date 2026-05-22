@@ -20,7 +20,11 @@ import {
  */
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
+
+  private get prisma() {
+    return this.prismaService;
+  }
 
   // ─── 1. Burn Rate ─────────────────────────────────────────────────────────
   async getBurnRate(

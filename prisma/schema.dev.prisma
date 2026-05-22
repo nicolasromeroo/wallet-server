@@ -1,0 +1,60 @@
+// DESARROLLO - SQLITE (Archivo local sin instalación)
+generator client {
+    provider   = "prisma-client-js"
+    engineType = "library"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id        String   @id @default(uuid())
+    email     String   @unique
+    password  String
+    name      String
+    createdAt DateTime @default(now())
+
+    sueldos Sueldo[]
+    gastos  Gasto[]
+    notes   Note[]
+}
+
+model Sueldo {
+    id    String   @id @default(uuid())
+    monto Float
+    tipo  String   @default("SUELDO")
+    fecha DateTime @default(now())
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    notes  Note[]
+}
+
+model Gasto {
+    id               String   @id @default(uuid())
+    descripcion      String
+    monto            Float
+    fecha            DateTime @default(now())
+    categoria        String?
+    esExtraordinario Boolean  @default(false)
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    notes  Note[]
+}
+
+model Note {
+    id          Int      @id @default(autoincrement())
+    title       String
+    description String
+    createdAt   DateTime @default(now())
+
+    userId   String
+    user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    sueldoId String?
+    sueldo   Sueldo? @relation(fields: [sueldoId], references: [id], onDelete: SetNull)
+    gastoId  String?
+    gasto    Gasto?  @relation(fields: [gastoId], references: [id], onDelete: SetNull)
+}

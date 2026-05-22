@@ -4,5 +4,6 @@ export class CreateGastoCommand {
     public readonly monto: number,
     public readonly descripcion: string,
     public readonly esExtraordinario: boolean = false,
+    public readonly categoria?: string,
   ) {}
 }

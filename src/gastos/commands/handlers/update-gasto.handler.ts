@@ -8,7 +8,8 @@ export class UpdateGastoHandler implements ICommandHandler<UpdateGastoCommand> {
   constructor(private readonly gastoRepository: GastoRepository) {}
 
   async execute(command: UpdateGastoCommand) {
-    const { gastoId, monto, descripcion, esExtraordinario } = command;
+    const { gastoId, monto, descripcion, esExtraordinario, categoria } =
+      command;
 
     const existing = await this.gastoRepository.findById(gastoId);
     if (!existing) {
@@ -19,6 +20,7 @@ export class UpdateGastoHandler implements ICommandHandler<UpdateGastoCommand> {
       monto,
       descripcion,
       esExtraordinario,
+      categoria: categoria || undefined,
     });
   }
 }
