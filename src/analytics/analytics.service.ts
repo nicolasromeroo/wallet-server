@@ -81,7 +81,10 @@ export class AnalyticsService {
   }
 
   // ─── 2. Ahorro proyectado ─────────────────────────────────────────────────
-  async getProjectedSavings(userId: string): Promise<SavingsMetrics> {
+  async getProjectedSavings(
+    userId: string,
+    burnRateOptional?: BurnRateMetrics,
+  ): Promise<SavingsMetrics> {
     const now = new Date();
     const diasEnMes = new Date(
       now.getFullYear(),
@@ -94,7 +97,7 @@ export class AnalyticsService {
       where: { userId },
       orderBy: { fecha: 'desc' },
     });
-    const burnRate = await this.getBurnRate(userId);
+    const burnRate = burnRateOptional ?? (await this.getBurnRate(userId));
 
     const income = ultimoSueldo?.monto ?? 0;
     const projectedExpenses = burnRate.burnRate * diasEnMes;
@@ -186,44 +189,56 @@ export class AnalyticsService {
     const mes = now.getMonth() + 1;
     const anio = now.getFullYear();
 
-    // Ejecutar secuencialmente para no agotar pool de conexiones en producción
-    const burnRate = await this.getBurnRate(userId);
-    const savings = await this.getProjectedSavings(userId);
-    const categories = await this.getCategoryBreakdown(userId);
-    const comparison = await this.getMonthlyComparison(userId);
+    try {
+      // Ejecutar secuencialmente para no agotar pool de conexiones en producción
+      const burnRate = await this.getBurnRate(userId);
+      const savings = await this.getProjectedSavings(userId, burnRate);
+      const categories = await this.getCategoryBreakdown(userId);
+      const comparison = await this.getMonthlyComparison(userId);
 
-    // Persistir snapshot para historial y ML features futuras
-    await this.prisma.analyticsSnapshot.upsert({
-      where: { userId_mes_anio: { userId, mes, anio } },
-      create: {
+      console.log('[ANALYTICS] Snapshot data:', {
+        burnRate,
+        savings,
+        categories,
+        comparison,
+      });
+
+      // Persistir snapshot para historial y ML features futuras
+      await this.prisma.analyticsSnapshot.upsert({
+        where: { userId_mes_anio: { userId, mes, anio } },
+        create: {
+          userId,
+          mes,
+          anio,
+          burnRate: burnRate.burnRate,
+          totalGastos: burnRate.totalGastos,
+          totalSueldos: savings.income,
+          ahorroProy: savings.projectedSavings,
+          diasElapsed: burnRate.diasElapsed,
+        },
+        update: {
+          burnRate: burnRate.burnRate,
+          totalGastos: burnRate.totalGastos,
+          totalSueldos: savings.income,
+          ahorroProy: savings.projectedSavings,
+          diasElapsed: burnRate.diasElapsed,
+        },
+      });
+
+      return {
         userId,
         mes,
         anio,
-        burnRate: burnRate.burnRate,
-        totalGastos: burnRate.totalGastos,
-        totalSueldos: savings.income,
-        ahorroProy: savings.projectedSavings,
-        diasElapsed: burnRate.diasElapsed,
-      },
-      update: {
-        burnRate: burnRate.burnRate,
-        totalGastos: burnRate.totalGastos,
-        totalSueldos: savings.income,
-        ahorroProy: savings.projectedSavings,
-        diasElapsed: burnRate.diasElapsed,
-      },
-    });
-
-    return {
-      userId,
-      mes,
-      anio,
-      burnRate,
-      savings,
-      categories,
-      comparison,
-      generatedAt: now,
-    };
+        burnRate,
+        savings,
+        categories,
+        comparison,
+        generatedAt: now,
+      };
+    } catch (error) {
+      console.error('[ANALYTICS] Error en getFullSnapshot:', error);
+      throw error;
+    }
   }
 
   // ─── Importación CSV ──────────────────────────────────────────────────────
