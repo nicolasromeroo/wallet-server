@@ -20,7 +20,7 @@ async function bootstrap() {
     'http://localhost:5173',
     'https://wallet-frnt-v1.vercel.app',
   ];
-  
+
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
@@ -29,7 +29,9 @@ async function bootstrap() {
   });
 
   await app.listen(process.env.PORT || 3000);
-  console.log(`[BOOTSTRAP] Servidor escuchando en puerto ${process.env.PORT || 3000}`);
+  console.log(
+    `[BOOTSTRAP] Servidor escuchando en puerto ${process.env.PORT || 3000}`,
+  );
   console.log(`[BOOTSTRAP] CORS habilitado para: ${allowedOrigins.join(', ')}`);
 }
 bootstrap();

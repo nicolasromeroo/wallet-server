@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ResendService } from 'nestjs-resend';
 
 export interface ReminderData {
@@ -18,51 +18,98 @@ const FROM = 'Gastos App <onboarding@resend.dev>';
 
 @Injectable()
 export class EmailResendService {
-  constructor(private readonly resendService: ResendService) {}
+  private readonly logger = new Logger(EmailResendService.name);
+  private readonly isEnabled: boolean;
+
+  constructor(@Optional() private readonly resendService?: ResendService) {
+    // Si no hay Resend o no tiene apiKey válido, deshabilita emails
+    this.isEnabled =
+      !!resendService &&
+      !!process.env.RESEND_API_KEY &&
+      process.env.RESEND_API_KEY !== 'dummy-key-for-production';
+    if (!this.isEnabled) {
+      this.logger.warn(
+        '⚠️ Email service disabled: missing RESEND_API_KEY or invalid config',
+      );
+    }
+  }
 
   async sendTestEmail() {
-    return this.resendService.send({
-      from: FROM,
-      to: 'nicromeroe@gmail.com',
-      subject: 'mail de prueba',
-      text: 'mail de prueba works!!',
-    });
+    if (!this.isEnabled || !this.resendService) {
+      this.logger.log('📧 Email service disabled, skipping test email');
+      return { id: 'test-disabled', success: false };
+    }
+    try {
+      return await this.resendService.send({
+        from: FROM,
+        to: 'nicromeroe@gmail.com',
+        subject: 'mail de prueba',
+        text: 'mail de prueba works!!',
+      });
+    } catch (err) {
+      this.logger.error('❌ Failed to send test email:', err);
+      return { error: err };
+    }
   }
 
   async sendMonthlyResumen(to: string, data: ReminderData) {
-    return this.resendService.send({
-      from: FROM,
-      to,
-      subject: `📊 Resumen de gastos — ${data.mes} ${data.anio}`,
-      html: this.buildResumenMensualHtml(data),
-    });
+    if (!this.isEnabled || !this.resendService) return { success: false };
+    try {
+      return await this.resendService.send({
+        from: FROM,
+        to,
+        subject: `📊 Resumen de gastos — ${data.mes} ${data.anio}`,
+        html: this.buildResumenMensualHtml(data),
+      });
+    } catch (err) {
+      this.logger.error('❌ Failed to send monthly resumen:', err);
+      return { error: err };
+    }
   }
 
   async sendGastoExcesivoAlert(to: string, data: ReminderData) {
-    return this.resendService.send({
-      from: FROM,
-      to,
-      subject: `⚠️ Alerta: gastos altos detectados este mes`,
-      html: this.buildGastoExcesivoHtml(data),
-    });
+    if (!this.isEnabled || !this.resendService) return { success: false };
+    try {
+      return await this.resendService.send({
+        from: FROM,
+        to,
+        subject: `⚠️ Alerta: gastos altos detectados este mes`,
+        html: this.buildGastoExcesivoHtml(data),
+      });
+    } catch (err) {
+      this.logger.error('❌ Failed to send gasto excesivo alert:', err);
+      return { error: err };
+    }
   }
 
   async sendNotasReminder(to: string, data: ReminderData) {
-    return this.resendService.send({
-      from: FROM,
-      to,
-      subject: `📝 Tus notas recientes — ${data.mes} ${data.anio}`,
-      html: this.buildNotasReminderHtml(data),
-    });
+    if (!this.isEnabled || !this.resendService) return { success: false };
+    try {
+      return await this.resendService.send({
+        from: FROM,
+        to,
+        subject: `📝 Tus notas recientes — ${data.mes} ${data.anio}`,
+        html: this.buildNotasReminderHtml(data),
+      });
+    } catch (err) {
+      this.logger.error('❌ Failed to send notas reminder:', err);
+      return { error: err };
+    }
   }
 
   async sendWeeklyResumen(to: string, data: ReminderData) {
-    return this.resendService.send({
-      from: FROM,
-      to,
-      subject: `📅 Tu resumen semanal de gastos`,
-      html: this.buildWeeklyHtml(data),
-    });
+    if (!this.isEnabled || !this.resendService) return { success: false };
+    try {
+      return await this.resendService.send({
+        from: FROM,
+        to,
+        subject: `📅 Tu resumen semanal de gastos`,
+        html: this.buildWeeklyHtml(data),
+      });
+    } catch (err) {
+      this.logger.error('❌ Failed to send weekly resumen:', err);
+      return { error: err };
+    }
   }
 
   private buildResumenMensualHtml(d: ReminderData): string {

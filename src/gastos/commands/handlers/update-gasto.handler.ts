@@ -16,27 +16,27 @@ export class UpdateGastoHandler implements ICommandHandler<UpdateGastoCommand> {
       throw new NotFoundException(`Gasto con id ${gastoId} no encontrado.`);
     }
 
-    // Solo incluir categoria si vino en el comando
-    const updateData: any = {
-      monto,
-      descripcion,
-      esExtraordinario,
-    };
+    // Solo incluir campos que efectivamente vienen (no undefined)
+    const updateData: any = {};
 
+    if (monto !== undefined) {
+      updateData.monto = monto;
+    }
+    if (descripcion !== undefined) {
+      updateData.descripcion = descripcion;
+    }
+    if (esExtraordinario !== undefined) {
+      updateData.esExtraordinario = esExtraordinario;
+    }
     if (categoria !== undefined) {
-      updateData.categoria = categoria || null; // "" → null, valor → se guarda
+      updateData.categoria = categoria || null; // "" → null, con valor → se guarda
     }
 
-    console.log(
-      '[UPDATE-GASTO] categoria recibida:',
-      categoria,
-      'updateData:',
-      updateData,
-    );
+    console.log('[UPDATE-GASTO] updateData:', updateData);
 
     const result = await this.gastoRepository.update(gastoId, updateData);
 
-    console.log('[UPDATE-GASTO] categoria guardada en DB:', result.categoria);
+    console.log('[UPDATE-GASTO] resultado guardado:', result);
     return result;
   }
 }
