@@ -102,7 +102,7 @@ export class AnalyticsController {
         fileIsRequired: false,
       }),
     )
-    file: Express.Multer.File,
+    file: any,
     @Request() req: any,
   ) {
     const rows: any[] = [];
