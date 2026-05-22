@@ -43,6 +43,30 @@ async function bootstrap() {
     optionsSuccessStatus: 200,
   });
 
+  // Middleware Express adicional para headers CORS (failsafe para proxies)
+  app.use((req: any, res: any, next: any) => {
+    const origin = req.headers.origin;
+    if (!origin || allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin || '*');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header(
+        'Access-Control-Allow-Methods',
+        'GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS',
+      );
+      res.header(
+        'Access-Control-Allow-Headers',
+        'Content-Type,Authorization,X-Requested-With,Accept',
+      );
+      res.header('Access-Control-Max-Age', '86400');
+    }
+
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+    } else {
+      next();
+    }
+  });
+
   await app.listen(process.env.PORT || 3000);
   console.log(
     `[BOOTSTRAP] Servidor escuchando en puerto ${process.env.PORT || 3000}`,
