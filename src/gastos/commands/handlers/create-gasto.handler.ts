@@ -30,10 +30,9 @@ export class CreateGastoHandler implements ICommandHandler<CreateGastoCommand> {
     // para desactivar esta funcion simplemente no envíes el campo esExtraordinario o envíalo como false.
     // aclaracion: en la UI gasto 'extraordinario' es gasto 'fijo' (ej: alquiler, servicios).
     if (!esExtraordinario) {
-      const [totalSueldos, totalGastos] = await Promise.all([
-        this.sueldoRepository.getSumAll(userId),
-        this.gastoRepository.getSumRegularByUser(userId),
-      ]);
+      // Queries secuenciales para no agotar el pool de conexiones
+      const totalSueldos = await this.sueldoRepository.getSumAll(userId);
+      const totalGastos = await this.gastoRepository.getSumRegularByUser(userId);
 
       const saldo = totalSueldos - totalGastos;
 
