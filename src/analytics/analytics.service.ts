@@ -92,15 +92,39 @@ export class AnalyticsService {
       0,
     ).getDate();
 
-    // Queries secuenciales para no agotar pool de conexiones
-    const ultimoSueldo = await this.prisma.sueldo.findFirst({
-      where: { userId },
-      orderBy: { fecha: 'desc' },
-    });
+    // Queries en paralelo para obtener contexto completo
+    const [ultimoSueldo, totalIngresosResult, totalGastosHistResult] =
+      await Promise.all([
+        this.prisma.sueldo.findFirst({
+          where: { userId },
+          orderBy: { fecha: 'desc' },
+        }),
+        // Suma acumulada de TODOS los sueldos registrados
+        this.prisma.sueldo.aggregate({
+          _sum: { monto: true },
+          where: { userId },
+        }),
+        // Suma acumulada de TODOS los gastos históricos
+        this.prisma.gasto.aggregate({
+          _sum: { monto: true },
+          where: { userId },
+        }),
+      ]);
+
     const burnRate = burnRateOptional ?? (await this.getBurnRate(userId));
 
     const income = ultimoSueldo?.monto ?? 0;
-    const projectedExpenses = burnRate.burnRate * diasEnMes;
+    const totalIngresos = totalIngresosResult._sum.monto ?? 0;
+    const totalGastosHistorico = totalGastosHistResult._sum.monto ?? 0;
+
+    // saldoActual: saldo REAL acumulado (todos los sueldos - todos los gastos de la historia)
+    // Es el dinero que el usuario realmente tiene disponible, no solo el del mes actual
+    const saldoActual = totalIngresos - totalGastosHistorico;
+
+    // Proyección mensual: lo ya gastado este mes + (ritmo diario × días restantes)
+    const diasRestantes = Math.max(0, diasEnMes - burnRate.diasElapsed);
+    const projectedExpenses =
+      burnRate.totalGastos + burnRate.burnRate * diasRestantes;
     const projectedSavings = income - projectedExpenses;
 
     return {
@@ -108,6 +132,7 @@ export class AnalyticsService {
       projectedExpenses,
       projectedSavings,
       savingsRate: income > 0 ? (projectedSavings / income) * 100 : 0,
+      saldoActual,
     };
   }
 

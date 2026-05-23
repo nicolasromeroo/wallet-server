@@ -11,7 +11,8 @@ export interface SavingsMetrics {
   income: number;
   projectedExpenses: number;
   projectedSavings: number;
-  savingsRate: number; // porcentaje sobre el ingreso
+  savingsRate: number; // porcentaje sobre el ingreso (puede ser negativo)
+  saldoActual: number; // income - totalGastos (dinero disponible HOY, nunca proyectado)
 }
 
 // ─── Breakdown por categoría ──────────────────────────────────────────────────
