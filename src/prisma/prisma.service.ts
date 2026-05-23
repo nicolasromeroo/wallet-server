@@ -13,11 +13,34 @@ export class PrismaService
 {
   private readonly logger = new Logger('PrismaService');
 
+  /**
+   * Para PostgreSQL en hosting gratuito (límite bajo de conexiones),
+   * forzamos connection_limit=1 si no viene ya en la URL.
+   * Esto serializa las queries a través de UNA sola conexión,
+   * evitando el error P2037 "too many connections".
+   */
+  private static buildDatabaseUrl(): string {
+    const url = process.env.DATABASE_URL ?? '';
+    if (!url || url.startsWith('file:')) return url; // SQLite: sin cambios
+    try {
+      const parsed = new URL(url);
+      if (!parsed.searchParams.has('connection_limit')) {
+        parsed.searchParams.set('connection_limit', '1');
+      }
+      if (!parsed.searchParams.has('pool_timeout')) {
+        parsed.searchParams.set('pool_timeout', '30');
+      }
+      return parsed.toString();
+    } catch {
+      return url;
+    }
+  }
+
   constructor() {
     super({
       datasources: {
         db: {
-          url: process.env.DATABASE_URL!,
+          url: PrismaService.buildDatabaseUrl(),
         },
       },
       log:

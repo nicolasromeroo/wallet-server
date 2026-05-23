@@ -12,6 +12,7 @@ import {
   FileTypeValidator,
   HttpCode,
   HttpStatus,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtGuard } from '../auth/guards/jwt.guard';
@@ -29,8 +30,14 @@ export class AnalyticsController {
    * Devuelve el snapshot completo de analytics del mes actual y lo persiste en DB.
    */
   @Get('snapshot')
-  getSnapshot(@Request() req: any) {
-    return this.analyticsService.getFullSnapshot(req.user.id);
+  async getSnapshot(@Request() req: any) {
+    try {
+      return await this.analyticsService.getFullSnapshot(req.user.id);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error al generar snapshot de analytics',
+      );
+    }
   }
 
   /**
@@ -38,16 +45,20 @@ export class AnalyticsController {
    * Burn rate: cuánto gastás por día y proyección del mes.
    */
   @Get('burn-rate')
-  getBurnRate(
+  async getBurnRate(
     @Request() req: any,
     @Query('mes') mes?: string,
     @Query('anio') anio?: string,
   ) {
-    return this.analyticsService.getBurnRate(
-      req.user.id,
-      mes ? parseInt(mes, 10) : undefined,
-      anio ? parseInt(anio, 10) : undefined,
-    );
+    try {
+      return await this.analyticsService.getBurnRate(
+        req.user.id,
+        mes ? parseInt(mes, 10) : undefined,
+        anio ? parseInt(anio, 10) : undefined,
+      );
+    } catch (error) {
+      throw new InternalServerErrorException('Error al calcular burn rate');
+    }
   }
 
   /**
@@ -55,8 +66,14 @@ export class AnalyticsController {
    * Ahorro proyectado: ingreso − gasto proyectado del mes.
    */
   @Get('savings')
-  getProjectedSavings(@Request() req: any) {
-    return this.analyticsService.getProjectedSavings(req.user.id);
+  async getProjectedSavings(@Request() req: any) {
+    try {
+      return await this.analyticsService.getProjectedSavings(req.user.id);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error al calcular ahorro proyectado',
+      );
+    }
   }
 
   /**
@@ -64,16 +81,22 @@ export class AnalyticsController {
    * Breakdown de gastos por categoría con porcentajes.
    */
   @Get('categories')
-  getCategoryBreakdown(
+  async getCategoryBreakdown(
     @Request() req: any,
     @Query('mes') mes?: string,
     @Query('anio') anio?: string,
   ) {
-    return this.analyticsService.getCategoryBreakdown(
-      req.user.id,
-      mes ? parseInt(mes, 10) : undefined,
-      anio ? parseInt(anio, 10) : undefined,
-    );
+    try {
+      return await this.analyticsService.getCategoryBreakdown(
+        req.user.id,
+        mes ? parseInt(mes, 10) : undefined,
+        anio ? parseInt(anio, 10) : undefined,
+      );
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error al calcular breakdown de categorías',
+      );
+    }
   }
 
   /**
@@ -81,8 +104,14 @@ export class AnalyticsController {
    * Comparación mes actual vs mes anterior con insight inteligente.
    */
   @Get('comparison')
-  getMonthlyComparison(@Request() req: any) {
-    return this.analyticsService.getMonthlyComparison(req.user.id);
+  async getMonthlyComparison(@Request() req: any) {
+    try {
+      return await this.analyticsService.getMonthlyComparison(req.user.id);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error al calcular comparación mensual',
+      );
+    }
   }
 
   /**

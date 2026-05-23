@@ -25,8 +25,10 @@ import { RemindersModule } from './reminders/reminders.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // Carga .env.development PRIMERO (desarrollo), luego fallback a .env
-      envFilePath: ['.env.development', '.env'],
+      envFilePath:
+        process.env.NODE_ENV === 'production'
+          ? ['.env.production']
+          : ['.env.development', '.env'],
     }),
     EventEmitterModule.forRoot(), // Habilita el sistema de eventos a nivel global
     ScheduleModule.forRoot(), // Habilita cron jobs (@Cron)
