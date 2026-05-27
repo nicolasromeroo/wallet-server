@@ -20,6 +20,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ResendModule } from './resend/resend.module';
 import { RemindersService } from './reminders/reminders.service';
 import { RemindersModule } from './reminders/reminders.module';
+import { HistorialModule } from './historial/historial.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { RemindersModule } from './reminders/reminders.module';
     NotificationsModule,
     ResendModule,
     RemindersModule, // email (Nodemailer) · push (web-push) · in-app listo para conectar
+    HistorialModule, // archivado mensual + exportación Excel
   ],
   controllers: [AppController, SueldosController],
   providers: [AppService, SueldosService, PrismaService, RemindersService],
