@@ -55,11 +55,12 @@ export class HistorialService {
     });
   }
 
-  // ─── Listar archivos del usuario ──────────────────────────────────────────
+  // listar archivados del usuario
   async getHistorial(userId: string) {
     const archivos = await this.prisma.monthArchive.findMany({
       where: { userId },
       orderBy: [{ anio: 'desc' }, { mes: 'desc' }],
+
       select: {
         id: true,
         mes: true,
@@ -67,17 +68,19 @@ export class HistorialService {
         totalGastos: true,
         totalSueldos: true,
         saldo: true,
+        nota: true,
         archivedAt: true,
       },
     });
     return archivos;
   }
 
-  // ─── Detalle de un mes archivado ──────────────────────────────────────────
+  // detalle de un mes archivado
   async getArchivoMes(userId: string, mes: number, anio: number) {
     const archivo = await this.prisma.monthArchive.findUnique({
       where: { userId_mes_anio: { userId, mes, anio } },
     });
+
     if (!archivo) {
       throw new NotFoundException(`No hay archivo para ${mes}/${anio}.`);
     }
@@ -88,7 +91,7 @@ export class HistorialService {
     };
   }
 
-  // ─── Exportar a Excel ─────────────────────────────────────────────────────
+  // exportar a excel
   async exportarExcel(
     userId: string,
     mes: number,

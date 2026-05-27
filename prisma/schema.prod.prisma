@@ -17,9 +17,10 @@ model User {
     createdAt DateTime @default(now())
 
     // relaciones de notas, sueldos y gastos
-    sueldos Sueldo[]
-    gastos  Gasto[]
-    notes   Note[]
+    sueldos       Sueldo[]
+    gastos        Gasto[]
+    notes         Note[]
+    monthArchives MonthArchive[]
 
     // movimientos Movimiento[] (TO DO)
 }
@@ -60,6 +61,23 @@ model AnalyticsSnapshot {
     diasElapsed  Int      @default(0)
     createdAt    DateTime @default(now())
     updatedAt    DateTime @updatedAt
+
+    @@unique([userId, mes, anio])
+}
+
+model MonthArchive {
+    id           String   @id @default(uuid())
+    userId       String
+    user         User     @relation(fields: [userId], references: [id])
+    mes          Int
+    anio         Int
+    totalGastos  Float
+    totalSueldos Float
+    saldo        Float
+    nota         String?
+    gastosJson   String
+    sueldosJson  String
+    archivedAt   DateTime @default(now())
 
     @@unique([userId, mes, anio])
 }
