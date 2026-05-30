@@ -58,3 +58,14 @@ model Note {
     gastoId  String?
     gasto    Gasto?  @relation(fields: [gastoId], references: [id], onDelete: SetNull)
 }
+
+model MonthArchive {
+    id        String   @id @default(uuid())
+    mes       Int
+    anio      Int
+    data      Json
+    createdAt DateTime @default(now())
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
