@@ -46,7 +46,11 @@ export class AnalyticsService {
 
     const result = await this.prisma.gasto.aggregate({
       _sum: { monto: true },
-      where: { userId, fecha: { gte: start, lte: end } },
+      where: {
+        userId,
+        fecha: { gte: start, lte: end },
+        esExtraordinario: false,
+      },
     });
 
     const totalGastos = result._sum.monto ?? 0;
@@ -61,7 +65,11 @@ export class AnalyticsService {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const recentResult = await this.prisma.gasto.aggregate({
         _sum: { monto: true },
-        where: { userId, fecha: { gte: sevenDaysAgo, lte: now } },
+        where: {
+          userId,
+          fecha: { gte: sevenDaysAgo, lte: now },
+          esExtraordinario: false,
+        },
       });
       const slidingRate = (recentResult._sum.monto ?? 0) / 7;
       // Blend: cuantos más días transcurridos, más peso al rate directo
