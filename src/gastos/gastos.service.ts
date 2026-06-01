@@ -21,8 +21,8 @@ export class GastosService {
     return this.queryBus.execute(new GetGastosQuery(userId));
   }
 
-  getSaldo(userId: string) {
-    return this.queryBus.execute(new GetSaldoQuery(userId));
+  getSaldo(userId: string, mes?: number, anio?: number) {
+    return this.queryBus.execute(new GetSaldoQuery(userId, mes, anio));
   }
 
   crearGasto(

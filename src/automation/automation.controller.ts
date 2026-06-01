@@ -24,7 +24,7 @@ export class AutomationController {
   @Post('run-rules')
   @HttpCode(HttpStatus.OK)
   runRules(@Request() req: any) {
-    return this.automationService.runRulesForUser(req.user.id);
+    return this.automationService.runRulesForUser(req.user.id, 0, '', true);
   }
 
   /**

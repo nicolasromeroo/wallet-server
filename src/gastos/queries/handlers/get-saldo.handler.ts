@@ -12,8 +12,8 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
 
   async execute(query: GetSaldoQuery) {
     const now = new Date();
-    const mes = now.getMonth() + 1;
-    const anio = now.getFullYear();
+    const mes = query.mes ?? now.getMonth() + 1;
+    const anio = query.anio ?? now.getFullYear();
 
     // Ejecutar queries secuenciales en lugar de paralelo para no agotar pool de conexiones
     const totalSueldosMes = await this.sueldoRepository.getSumByMonth(
@@ -37,11 +37,7 @@ export class GetSaldoHandler implements IQueryHandler<GetSaldoQuery> {
       query.userId,
     );
 
-    // Si no hay sueldo registrado este mes, usar el más reciente como referencia
-    const sueldoDelMes =
-      totalSueldosMes > 0
-        ? totalSueldosMes
-        : ((await this.sueldoRepository.findActual(query.userId))?.monto ?? 0);
+    const sueldoDelMes = totalSueldosMes;
 
     // El saldo descuenta TODOS los gastos (ordinarios + extraordinarios/fijos)
     const saldo = totalSueldosHistorico - totalGastosTodosHistorico;

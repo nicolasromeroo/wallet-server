@@ -41,7 +41,12 @@ export class AutomationService {
     userId: string,
     lastGastoMonto = 0,
     lastGastoDescripcion = '',
+    resetNotifications = false,
   ): Promise<RuleExecutionResult[]> {
+    if (resetNotifications) {
+      this.notificationHandler.clearNotifications(userId);
+    }
+
     const now = new Date();
 
     const [burnRate, savings, categories] = await Promise.all([
@@ -86,7 +91,16 @@ export class AutomationService {
   }
 
   getInsights(userId: string) {
-    return this.notificationHandler.getNotifications(userId);
+    return this.notificationHandler
+      .getNotifications(userId)
+      .map((notification) => ({
+        id: notification.timestamp.getTime().toString(),
+        type: notification.action.type,
+        severity: notification.action.severity,
+        message: notification.action.message,
+        metadata: notification.action.metadata,
+        createdAt: notification.timestamp.toISOString(),
+      }));
   }
 
   clearInsights(userId: string) {

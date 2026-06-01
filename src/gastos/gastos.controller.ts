@@ -32,8 +32,16 @@ export class GastosController {
   }
 
   @Get('saldo')
-  getSaldo(@Req() req: any) {
-    return this.gastosService.getSaldo(req.user.id);
+  getSaldo(
+    @Req() req: any,
+    @Query('mes') mes?: string,
+    @Query('anio') anio?: string,
+  ) {
+    return this.gastosService.getSaldo(
+      req.user.id,
+      mes ? parseInt(mes, 10) : undefined,
+      anio ? parseInt(anio, 10) : undefined,
+    );
   }
 
   @Post()
