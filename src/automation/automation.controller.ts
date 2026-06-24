@@ -28,6 +28,17 @@ export class AutomationController {
   }
 
   /**
+   * GET /automation/evaluate
+   * Evalúa las reglas EN VIVO contra la situación actual del usuario, sin
+   * persistir ni disparar notificaciones. Es la fuente del diagnóstico del
+   * dashboard (idempotente).
+   */
+  @Get('evaluate')
+  evaluate(@Request() req: any) {
+    return this.automationService.evaluateRules(req.user.id);
+  }
+
+  /**
    * GET /automation/insights
    * Devuelve todas las notificaciones/alertas pendientes del usuario.
    */

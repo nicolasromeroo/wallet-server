@@ -76,17 +76,12 @@ export class AutomationService {
     }
   }
 
-  /** Ejecuta el motor de reglas para un usuario y emite eventos para cada hit */
-  async runRulesForUser(
+  /** Construye el RuleContext con los datos financieros actuales del usuario. */
+  private async buildContext(
     userId: string,
     lastGastoMonto = 0,
     lastGastoDescripcion = '',
-    resetNotifications = false,
-  ): Promise<RuleExecutionResult[]> {
-    if (resetNotifications) {
-      this.notificationHandler.clearNotifications(userId);
-    }
-
+  ): Promise<RuleContext> {
     const now = new Date();
 
     const [burnRate, savings, categories] = await Promise.all([
@@ -98,7 +93,7 @@ export class AutomationService {
     const getCat = (name: string) =>
       categories.find((c) => c.categoria.toUpperCase() === name)?.total ?? 0;
 
-    const context: RuleContext = {
+    return {
       userId,
       comida: getCat('COMIDA'),
       transporte: getCat('TRANSPORTE'),
@@ -116,6 +111,35 @@ export class AutomationService {
       mes: now.getMonth() + 1,
       anio: now.getFullYear(),
     };
+  }
+
+  /**
+   * Evalúa las reglas en VIVO y devuelve las activadas, SIN efectos secundarios
+   * (no persiste ni emite eventos). Es la fuente del diagnóstico del dashboard:
+   * las alertas reflejan la situación actual y desaparecen solas al corregir la
+   * causa, sin necesidad de "limpiar".
+   */
+  async evaluateRules(userId: string): Promise<RuleExecutionResult[]> {
+    const context = await this.buildContext(userId);
+    return this.rulesEngine.getTriggered(context);
+  }
+
+  /** Ejecuta el motor de reglas para un usuario y emite eventos para cada hit */
+  async runRulesForUser(
+    userId: string,
+    lastGastoMonto = 0,
+    lastGastoDescripcion = '',
+    resetNotifications = false,
+  ): Promise<RuleExecutionResult[]> {
+    if (resetNotifications) {
+      this.notificationHandler.clearNotifications(userId);
+    }
+
+    const context = await this.buildContext(
+      userId,
+      lastGastoMonto,
+      lastGastoDescripcion,
+    );
 
     const triggered = this.rulesEngine.getTriggered(context);
 
