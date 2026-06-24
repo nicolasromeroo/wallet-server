@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
-import * as fs from 'fs';
 import { DatasetService } from '../datasets/dataset.service';
+import { saveModelToDir } from '../models/model-storage';
 import { normalizeText } from '../pipelines/data-preparation.pipeline';
 import {
   textToVector,
@@ -72,8 +72,7 @@ export class TrainingService {
 
       // SAVE
       const modelDir = path.join(process.cwd(), 'models', 'expense-classifier');
-      if (!fs.existsSync(modelDir)) fs.mkdirSync(modelDir, { recursive: true });
-      await model.save(`file://${modelDir}`);
+      await saveModelToDir(model, modelDir);
       this.logger.log(`Classifier saved to ${modelDir} ✓`);
 
       xs.dispose();
@@ -153,8 +152,7 @@ export class TrainingService {
       await model.fit(xs, ys, { epochs: 100, batchSize: 4 });
 
       const modelDir = path.join(process.cwd(), 'models', 'expense-forecast');
-      if (!fs.existsSync(modelDir)) fs.mkdirSync(modelDir, { recursive: true });
-      await model.save(`file://${modelDir}`);
+      await saveModelToDir(model, modelDir);
       this.logger.log(`Forecast model saved to ${modelDir} ✓`);
 
       xs.dispose();

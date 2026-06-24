@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
-import * as fs from 'fs';
 import {
   CATEGORIES,
   ExpenseCategory,
@@ -12,6 +11,7 @@ import {
   buildForecastFeatures,
 } from '../pipelines/feature-engineering.pipeline';
 import { normalizeText } from '../pipelines/data-preparation.pipeline';
+import { loadModelFromDir } from '../models/model-storage';
 
 /**
  * Prediction Service
@@ -25,31 +25,27 @@ export class PredictionService {
   private classifierModel: any = null;
   private forecastModel: any = null;
 
-  private get classifierPath(): string {
-    return path.join(
-      process.cwd(),
-      'models',
-      'expense-classifier',
-      'model.json',
-    );
+  // Debajo de esta confianza, el modelo cede ante las reglas de palabras clave.
+  private readonly MODEL_CONFIDENCE_FLOOR = 0.5;
+
+  private get classifierDir(): string {
+    return path.join(process.cwd(), 'models', 'expense-classifier');
   }
 
-  private get forecastPath(): string {
-    return path.join(process.cwd(), 'models', 'expense-forecast', 'model.json');
+  private get forecastDir(): string {
+    return path.join(process.cwd(), 'models', 'expense-forecast');
   }
 
   async loadClassifier(): Promise<boolean> {
     try {
-      if (!fs.existsSync(this.classifierPath)) {
+      const model = await loadModelFromDir(this.classifierDir);
+      if (!model) {
         this.logger.warn(
           'Classifier not found — train it first via POST /ml/train/classifier',
         );
         return false;
       }
-      const tf = await import('@tensorflow/tfjs');
-      this.classifierModel = await tf.loadLayersModel(
-        `file://${this.classifierPath}`,
-      );
+      this.classifierModel = model;
       this.logger.log('Classifier model loaded ✓');
       return true;
     } catch (err: any) {
@@ -60,16 +56,14 @@ export class PredictionService {
 
   async loadForecastModel(): Promise<boolean> {
     try {
-      if (!fs.existsSync(this.forecastPath)) {
+      const model = await loadModelFromDir(this.forecastDir);
+      if (!model) {
         this.logger.warn(
           'Forecast model not found — train it first via POST /ml/train/forecast',
         );
         return false;
       }
-      const tf = await import('@tensorflow/tfjs');
-      this.forecastModel = await tf.loadLayersModel(
-        `file://${this.forecastPath}`,
-      );
+      this.forecastModel = model;
       this.logger.log('Forecast model loaded ✓');
       return true;
     } catch (err: any) {
@@ -95,15 +89,36 @@ export class PredictionService {
       input.dispose();
       output.dispose();
 
+      // Guard: si el modelo guardado tiene otra cantidad de clases que la
+      // taxonomía actual (p.ej. se agregaron categorías y no se reentrenó),
+      // cae a reglas en lugar de devolver probabilidades desalineadas.
+      if (probs.length !== CATEGORIES.length) {
+        this.logger.warn(
+          `Modelo desactualizado (${probs.length} clases vs ${CATEGORIES.length}). Reentrená el clasificador. Uso reglas.`,
+        );
+        return this.ruleBasedClassification(description);
+      }
+
       const maxIdx = Array.from(probs).indexOf(Math.max(...probs));
       const allProbabilities = {} as Record<ExpenseCategory, number>;
       CATEGORIES.forEach((cat, i) => {
         allProbabilities[cat] = probs[i];
       });
+      const confidence = probs[maxIdx];
+
+      // Híbrido: un modelo recién entrenado con pocos datos reparte la
+      // probabilidad entre muchas clases y queda con confianza baja. Si el
+      // modelo no está seguro pero las reglas reconocen palabras clave, ganan
+      // las reglas (señal fuerte y explicable). El modelo solo prevalece cuando
+      // está realmente seguro.
+      if (confidence < this.MODEL_CONFIDENCE_FLOOR) {
+        const rule = this.ruleBasedClassification(description);
+        if (rule.categoria !== 'OTROS') return rule;
+      }
 
       return {
         categoria: CATEGORIES[maxIdx],
-        confidence: probs[maxIdx],
+        confidence,
         allProbabilities,
         source: 'model',
       };
@@ -186,55 +201,92 @@ export class PredictionService {
           'almuerzo',
           'cena',
           'desayuno',
+          'panaderia',
+          'parrilla',
+          'sushi',
+          'bar ',
+        ],
+        category: 'COMIDA',
+      },
+      {
+        keywords: [
           'mercado',
           'supermercado',
           'carrefour',
           'walmart',
           'jumbo',
+          'coto',
           'dia ',
-          'panaderia',
+          'almacen',
           'verduleria',
+          'fruteria',
+          'carniceria',
+          'kiosco',
+          'despensa',
+          'chino',
         ],
-        category: 'COMIDA',
+        category: 'ALMACEN',
       },
       {
         keywords: [
           'uber',
           'cabify',
           'taxi',
+          'didi',
+          'remis',
           'nafta',
           'combustible',
-          'colectivo',
-          'subte',
-          'tren',
           'peaje',
           'estacionamiento',
           'shell',
           'ypf',
           'axion',
-          'auto',
-          'seguro auto',
         ],
-        category: 'TRANSPORTE',
+        category: 'UBER',
+      },
+      {
+        keywords: [
+          'colectivo',
+          'subte',
+          'tren',
+          'sube',
+          'micro',
+          'bondi',
+          'boleto',
+        ],
+        category: 'COLECTIVO',
+      },
+      {
+        keywords: [
+          'cine',
+          'teatro',
+          'juego',
+          'steam',
+          'playstation',
+          'xbox',
+          'recital',
+          'boliche',
+          'salida',
+          'parque',
+        ],
+        category: 'ENTRETENIMIENTO',
       },
       {
         keywords: [
           'netflix',
           'spotify',
-          'cine',
-          'teatro',
-          'juego',
-          'steam',
-          'youtube premium',
           'disney',
           'amazon prime',
+          'youtube premium',
           'hbo',
+          'max',
           'paramount',
           'twitch',
-          'playstation',
-          'xbox',
+          'suscripcion',
+          'membresia',
+          'plan mensual',
         ],
-        category: 'ENTRETENIMIENTO',
+        category: 'SUSCRIPCIONES',
       },
       {
         keywords: [
@@ -250,9 +302,24 @@ export class PredictionService {
           'pami',
           'osde',
           'swiss medical',
+          'dentista',
           'analisis',
         ],
         category: 'SALUD',
+      },
+      {
+        keywords: [
+          'veterinaria',
+          'veterinario',
+          'mascota',
+          'perro',
+          'gato',
+          'balanceado',
+          'petshop',
+          'pet shop',
+          'alimento para',
+        ],
+        category: 'MASCOTAS',
       },
       {
         keywords: [
@@ -268,6 +335,7 @@ export class PredictionService {
           'capacitacion',
           'seminario',
           'libreria',
+          'apuntes',
         ],
         category: 'EDUCACION',
       },
@@ -275,21 +343,37 @@ export class PredictionService {
         keywords: [
           'alquiler',
           'expensas',
+          'limpieza',
+          'hogar',
+          'mueble',
+          'ferreteria',
+          'decoracion',
+          'electrodomestico',
+          'sommier',
+          'colchon',
+        ],
+        category: 'HOGAR',
+      },
+      {
+        keywords: [
           'luz',
           'gas',
           'agua',
           'internet',
           'telefono',
-          'limpieza',
-          'hogar',
-          'mueble',
+          'celular plan',
           'edesur',
           'edenor',
           'metrogas',
+          'aysa',
           'telecom',
           'fibertel',
+          'movistar',
+          'claro',
+          'personal',
+          'cable',
         ],
-        category: 'HOGAR',
+        category: 'SERVICIOS',
       },
       {
         keywords: [
@@ -305,8 +389,28 @@ export class PredictionService {
           'mercadolibre',
           'auricular',
           'monitor',
+          'teclado',
+          'mouse',
         ],
         category: 'TECNOLOGIA',
+      },
+      {
+        keywords: [
+          'ropa',
+          'zapatilla',
+          'zapato',
+          'remera',
+          'pantalon',
+          'campera',
+          'indumentaria',
+          'nike',
+          'adidas',
+          'zara',
+          'vestido',
+          'calzado',
+          'jean',
+        ],
+        category: 'ROPA',
       },
     ];
 

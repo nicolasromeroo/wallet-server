@@ -4,6 +4,7 @@ import { MlController } from './ml.controller';
 import { MlService } from './services/ml.service';
 import { TrainingService } from './services/training.service';
 import { PredictionService } from './services/prediction.service';
+import { AnomalyService } from './services/anomaly.service';
 import { DatasetService } from './datasets/dataset.service';
 import { TrainingJob } from './jobs/training.job';
 
@@ -14,6 +15,7 @@ import { TrainingJob } from './jobs/training.job';
     MlService,
     TrainingService,
     PredictionService,
+    AnomalyService,
     DatasetService,
     TrainingJob,
   ],

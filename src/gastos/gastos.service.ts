@@ -7,6 +7,7 @@ import { GetGastosPorMesQuery } from './queries/get-gastos-por-mes.query';
 import { GetGastosQuery } from './queries/get-gastos.query';
 import { GetSaldoQuery } from './queries/get-saldo.query';
 import { GetGastoExcesivoQuery } from './queries/get-gasto-excesivo.query';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 // Con CQRS, el Service ya no tiene lógica de negocio
 // Solo actúa como dispatcher: recibe la intención y la despacha al bus correspondiente
@@ -15,6 +16,7 @@ export class GastosService {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly prisma: PrismaService,
   ) {}
 
   listar(userId: string) {
@@ -73,5 +75,26 @@ export class GastosService {
 
   getGastoExcesivo(userId: string, monto: number) {
     return this.queryBus.execute(new GetGastoExcesivoQuery(userId, monto));
+  }
+
+  // seccion de logica de negocio para machine learning | microservicio de python + fastapi
+  // resumen mensual (CSV -> raw.csv)
+  async getResumenMensual(userId: string) {
+    const rows = await this.prisma.$queryRaw`
+      SELECT
+        to_char(date_trunc('month', "fecha"), 'YYYY-MM') as mes,
+        categoria as category,
+        SUM(monto)::float as total_gastado,
+        SUM(CASE WHEN "esExtraordinario" THEN monto ELSE 0 END)::float as gastos_fijos,
+        SUM(CASE WHEN NOT "esExtraordinario" THEN monto ELSE 0 END)::float as gastos_variables,
+        COUNT(*)::int as cantidad_transacciones,
+        COUNT(DISTINCT date_trunc('day', "fecha"))::int as dias_con_gasto
+      FROM "Gasto"
+      WHERE "userId" = ${userId}
+      GROUP BY date_trunc('month', "fecha"), categoria
+      ORDER BY mes
+    `;
+
+    return rows;
   }
 }

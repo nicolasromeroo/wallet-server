@@ -124,4 +124,10 @@ export class GastosController {
       },
     };
   }
+
+  // seccion de logica de negocio para machine learning | microservicio de python + fastapi
+  @Get('resumen-mensual/:userId')
+  getResumen(@Param('userId') userId: string) {
+    return this.gastosService.getResumenMensual(userId);
+  }
 }

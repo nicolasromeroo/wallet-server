@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PredictionService } from './prediction.service';
 import { TrainingService } from './training.service';
+import { AnomalyService } from './anomaly.service';
 import { DatasetService } from '../datasets/dataset.service';
 import {
   PredictionResult,
   ForecastResult,
   ModelMetrics,
+  AnomalyScanResult,
+  AnomalyResult,
 } from '../types/ml.types';
 
 /**
@@ -18,6 +21,7 @@ export class MlService {
   constructor(
     private readonly predictionService: PredictionService,
     private readonly trainingService: TrainingService,
+    private readonly anomalyService: AnomalyService,
     private readonly datasetService: DatasetService,
   ) {}
 
@@ -64,5 +68,28 @@ export class MlService {
   /** Entrena el modelo de forecast con el historial del usuario */
   async trainForecast(userId: string): Promise<ModelMetrics> {
     return this.trainingService.trainForecastModel(userId);
+  }
+
+  /** Escanea los gastos recientes del usuario en busca de montos inusuales */
+  async detectAnomalies(userId: string): Promise<AnomalyScanResult> {
+    return this.anomalyService.detectAnomalies(userId);
+  }
+
+  /**
+   * Evalúa un gasto puntual recién creado: corre el escaneo y devuelve la
+   * anomalía correspondiente a ese gastoId, o null si no resultó inusual.
+   * Lo usa AutomationService para avisar en el momento de la carga.
+   */
+  async checkGastoAnomaly(
+    userId: string,
+    gastoId: string,
+  ): Promise<AnomalyResult | null> {
+    const scan = await this.anomalyService.detectAnomalies(userId);
+    return scan.anomalies.find((a) => a.gastoId === gastoId) ?? null;
+  }
+
+  /** Entrena el autoencoder de anomalías con el historial del usuario */
+  async trainAnomalyDetector(userId: string): Promise<ModelMetrics> {
+    return this.anomalyService.trainAnomalyModel(userId);
   }
 }

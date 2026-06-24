@@ -24,7 +24,7 @@ export class RulesEngine {
       action: (ctx) => ({
         type: 'ALERT',
         severity: 'WARNING',
-        message: `⚠️ Gastás mucho en comida: $${ctx.comida.toFixed(0)} (${((ctx.comida / ctx.income) * 100).toFixed(1)}% de tu ingreso mensual).`,
+        message: `Gastás mucho en comida: $${ctx.comida.toFixed(0)} (${((ctx.comida / ctx.income) * 100).toFixed(1)}% de tu ingreso mensual).`,
         metadata: { categoria: 'COMIDA', monto: ctx.comida },
       }),
     },
@@ -39,7 +39,7 @@ export class RulesEngine {
       action: (ctx) => ({
         type: 'ALERT',
         severity: 'CRITICAL',
-        message: `🔥 A este ritmo ($${ctx.burnRate.toFixed(0)}/día) gastarás $${(ctx.burnRate * 30).toFixed(0)} este mes — superás tu ingreso de $${ctx.income.toFixed(0)}.`,
+        message: `A este ritmo ($${ctx.burnRate.toFixed(0)}/día) gastarás $${(ctx.burnRate * 30).toFixed(0)} este mes — superás tu ingreso de $${ctx.income.toFixed(0)}.`,
         metadata: { burnRate: ctx.burnRate, proyectado: ctx.burnRate * 30 },
       }),
     },
@@ -57,7 +57,7 @@ export class RulesEngine {
       action: (ctx) => ({
         type: 'NOTIFICATION',
         severity: 'WARNING',
-        message: `💸 Gasto importante: "${ctx.lastGastoDescripcion}" por $${ctx.lastGastoMonto.toFixed(0)} (${((ctx.lastGastoMonto / ctx.income) * 100).toFixed(1)}% de tu ingreso).`,
+        message: `Gasto importante: "${ctx.lastGastoDescripcion}" por $${ctx.lastGastoMonto.toFixed(0)} (${((ctx.lastGastoMonto / ctx.income) * 100).toFixed(1)}% de tu ingreso).`,
         metadata: {
           descripcion: ctx.lastGastoDescripcion,
           monto: ctx.lastGastoMonto,
@@ -74,7 +74,7 @@ export class RulesEngine {
       action: (ctx) => ({
         type: 'ALERT',
         severity: 'CRITICAL',
-        message: `❌ Proyección: este mes gastarás más de lo que ganás. Déficit estimado: $${Math.abs(ctx.income - ctx.burnRate * 30).toFixed(0)}.`,
+        message: `Proyección: este mes gastarás más de lo que ganás. Déficit estimado: $${Math.abs(ctx.income - ctx.burnRate * 30).toFixed(0)}.`,
         metadata: { deficit: ctx.income - ctx.burnRate * 30 },
       }),
     },
@@ -90,7 +90,7 @@ export class RulesEngine {
       action: (ctx) => ({
         type: 'SUGGESTION',
         severity: 'INFO',
-        message: `🎮 Entretenimiento: $${ctx.entretenimiento.toFixed(0)} este mes. Considerá revisar tus suscripciones.`,
+        message: `Entretenimiento: $${ctx.entretenimiento.toFixed(0)} este mes. Considerá revisar tus suscripciones.`,
         metadata: { monto: ctx.entretenimiento },
       }),
     },
@@ -109,7 +109,7 @@ export class RulesEngine {
       action: (ctx) => ({
         type: 'SUGGESTION',
         severity: 'INFO',
-        message: `💡 Tu ahorro proyectado es menor al 10% del ingreso. Intentá reducir gastos variables.`,
+        message: `Tu ahorro proyectado es menor al 10% del ingreso. Intentá reducir gastos variables.`,
         metadata: {
           ahorroProy: ctx.income - ctx.burnRate * 30,
           tasaAhorro: ((ctx.income - ctx.burnRate * 30) / ctx.income) * 100,

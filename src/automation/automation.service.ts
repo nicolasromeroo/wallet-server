@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { RulesEngine } from './rules/rules.engine';
 import { NotificationHandler } from './handlers/notification.handler';
 import { RuleContext, RuleExecutionResult } from './rules/rules.types';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { GastoCreadoEvent } from '../gastos/events/gasto-creado.event';
+import { MlService } from '../ml/services/ml.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * Automation Service — orquesta el pipeline de automatización:
@@ -19,11 +21,15 @@ import { GastoCreadoEvent } from '../gastos/events/gasto-creado.event';
  */
 @Injectable()
 export class AutomationService {
+  private readonly logger = new Logger(AutomationService.name);
+
   constructor(
     private readonly rulesEngine: RulesEngine,
     private readonly notificationHandler: NotificationHandler,
     private readonly analyticsService: AnalyticsService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly mlService: MlService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** Escucha el evento de gasto creado y corre el pipeline automáticamente */
@@ -34,6 +40,40 @@ export class AutomationService {
       event.monto,
       `gasto:${event.gastoId}`,
     );
+    // Chequeo de anomalía del gasto recién cargado (proactivo, no bloqueante).
+    await this.checkAnomalyForNewGasto(event);
+  }
+
+  /**
+   * Corre el detector ML sobre el gasto recién creado. Si resultó inusual,
+   * dispara una notificación por el canal proactivo (NotificationsService).
+   * Esto NO toca el feed de reglas del dashboard (la sección IA ya escanea en
+   * vivo): es el canal para avisar al instante por in-app / push / email.
+   */
+  private async checkAnomalyForNewGasto(
+    event: GastoCreadoEvent,
+  ): Promise<void> {
+    try {
+      const anomaly = await this.mlService.checkGastoAnomaly(
+        event.userId,
+        event.gastoId,
+      );
+      if (!anomaly) return;
+
+      await this.notifications.notify({
+        userId: event.userId,
+        title: 'Gasto inusual detectado',
+        body: anomaly.reason,
+        severity: anomaly.level === 'muy_inusual' ? 'warning' : 'info',
+        channels: ['in-app'],
+      });
+      this.logger.log(
+        `Anomalía proactiva (${anomaly.kind}) para gasto ${event.gastoId}: ${anomaly.reason}`,
+      );
+    } catch (err: any) {
+      // Nunca debe romper la creación del gasto.
+      this.logger.warn(`Chequeo de anomalía falló: ${err.message}`);
+    }
   }
 
   /** Ejecuta el motor de reglas para un usuario y emite eventos para cada hit */

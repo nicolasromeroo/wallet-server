@@ -59,4 +59,26 @@ export class MlController {
   trainForecast(@Request() req: any) {
     return this.mlService.trainForecast(req.user.id);
   }
+
+  /**
+   * GET /ml/anomalies
+   * Escanea los gastos recientes del usuario y devuelve los montos inusuales,
+   * con su explicación y el rango esperado por categoría.
+   */
+  @Get('anomalies')
+  detectAnomalies(@Request() req: any) {
+    return this.mlService.detectAnomalies(req.user.id);
+  }
+
+  /**
+   * POST /ml/train/anomaly
+   * Entrena el autoencoder de detección de anomalías con el historial del usuario.
+   * Requiere al menos 15 gastos. El detector funciona igual sin entrenar
+   * (cae a estadística robusta), esto solo lo mejora.
+   */
+  @Post('train/anomaly')
+  @HttpCode(HttpStatus.OK)
+  trainAnomaly(@Request() req: any) {
+    return this.mlService.trainAnomalyDetector(req.user.id);
+  }
 }
