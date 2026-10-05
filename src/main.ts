@@ -26,7 +26,7 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type,Authorization,Accept',
   });
 
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(process.env.PORT || 3000, '0.0.0.0');
   console.log(
     `[BOOTSTRAP] Servidor escuchando en puerto ${process.env.PORT || 3000}`,
   );
